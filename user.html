@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard - Clean City</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <div class="dashboard">
+        <div class="sidebar">
+            <div class="sidebar-brand">🌿 Clean City</div>
+            <div class="sidebar-menu">
+                <a class="menu-item active" onclick="showSection('report')">📢 Report Waste</a>
+                <a class="menu-item" onclick="showSection('track')">📍 Track & Review<span id="noti-user-track" class="notification-dot"></span></a>
+                <a class="menu-item" onclick="showSection('profile')">👤 My Profile</a>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="topbar">
+                <h2>User Portal</h2>
+                <div style="display:flex; align-items:center; gap: 1rem;">
+                    <span id="topbar-username" style="font-weight:600; color:var(--text-dark)"></span>
+                    <button class="btn" style="background:transparent; color:var(--text-dark); padding:0.5rem;" onclick="openSettings()">⚙️ Settings</button>
+                    <button id="logout-btn" class="btn btn-primary"
+                        style="padding: 0.5rem 1rem; width:auto; border-radius:8px;">Logout</button>
+                </div>
+            </div>
+
+            <div class="container">
+
+                <!-- Report Section -->
+                <div id="report-section" class="card" style="max-width: 600px; margin: 0 auto;">
+                    <h3 style="margin-bottom:0.5rem;">Report Waste</h3>
+                    <p class="text-muted" style="margin-bottom: 2rem;">Capture the issue live. File uploads are disabled
+                        to ensure real-time reporting.</p>
+
+                    <form onsubmit="handleReportComplaint(event)">
+                        <div class="form-group">
+                            <label>Location Area</label>
+                            <input type="text" id="comp-location" class="form-control" required
+                                placeholder="E.g. Near Central Park Entrance">
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea id="comp-desc" class="form-control" rows="3" required
+                                placeholder="Briefly describe the waste..."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label>📸 Live Camera Capture <span style="color:red">*</span></label>
+                            <div class="camera-container">
+                                <video id="video-stream" autoplay playsinline></video>
+                                <img id="video-preview" class="preview-image">
+                            </div>
+                            <div style="display:flex; gap: 1rem;">
+                                <button type="button" class="btn" style="background:#e5e7eb; color:var(--text-dark);"
+                                    onclick="initCam()" id="start-cam-btn">Open Camera</button>
+                                <button type="button" class="btn btn-primary" id="capture-cam-btn" style="display:none;"
+                                    onclick="takePhoto()">Take Photo</button>
+                                <button type="button" class="btn"
+                                    style="background:#fef2f2; color:#b91c1c; display:none;" id="retake-cam-btn"
+                                    onclick="retakePhoto()">Retake</button>
+                            </div>
+                        </div>
+
+                        <input type="hidden" id="captured-image-base64">
+
+                        <button type="submit" class="btn btn-primary" style="margin-top: 1rem;">Submit Report</button>
+                    </form>
+                </div>
+
+                <!-- Track Section -->
+                <div id="track-section" style="display: none;">
+                    <h3 style="margin-bottom: 1.5rem;">My Complaints</h3>
+                    <div id="complaints-list" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                        <!-- dynamic complaints -->
+                    </div>
+                </div>
+
+                <!-- Profile Section -->
+                <div id="profile-section" class="card" style="display: none; max-width: 600px; margin: 0 auto;">
+                    <h3 style="margin-bottom: 1.5rem;">My Profile</h3>
+                    <div style="display:flex; flex-direction:column; gap:1rem;">
+                        <div style="padding: 1rem; border: 1px solid var(--border-light); border-radius: 8px; background: rgba(0,0,0,0.02);">
+                            <p class="text-sm text-muted">Full Name</p>
+                            <h4 id="profile-name" style="margin-top:0.2rem"></h4>
+                        </div>
+                        <div style="padding: 1rem; border: 1px solid var(--border-light); border-radius: 8px; background: rgba(0,0,0,0.02);">
+                            <p class="text-sm text-muted">Email Address</p>
+                            <h4 id="profile-email" style="margin-top:0.2rem"></h4>
+                        </div>
+                        <div style="padding: 1rem; border: 1px solid var(--border-light); border-radius: 8px; background: rgba(0,0,0,0.02);">
+                            <p class="text-sm text-muted">City</p>
+                            <h4 id="profile-city" style="margin-top:0.2rem"></h4>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Review Modal -->
+    <div id="review-modal" class="auth-container"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:100;">
+        <div class="auth-card" style="padding: 2.5rem;">
+            <h3>Rate Collector</h3>
+            <p class="text-muted mt-2">How did they do? Your feedback is visible to them.</p>
+            <form onsubmit="submitReview(event)" style="margin-top: 1.5rem;">
+                <input type="hidden" id="rev-comp-id">
+                <input type="hidden" id="rev-col-id">
+                <div class="form-group">
+                    <label>Rating (1-5 ⭐)</label>
+                    <select id="rev-rating" class="form-control" required>
+                        <option value="5">⭐⭐⭐⭐⭐ Excellent</option>
+                        <option value="4">⭐⭐⭐⭐ Good</option>
+                        <option value="3">⭐⭐⭐ Average</option>
+                        <option value="2">⭐⭐ Poor</option>
+                        <option value="1">⭐ Very Bad</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Comment / Feedback</label>
+                    <textarea id="rev-comment" class="form-control" rows="3" required
+                        placeholder="Write your review..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit Review</button>
+                <button type="button" class="btn"
+                    style="background:#f3f4f6; color:var(--text-dark); margin-top:0.75rem;"
+                    onclick="closeReview()">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Live Tracking Modal -->
+    <div id="tracking-modal" class="auth-container"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:100;">
+        <div class="auth-card" style="padding: 2.5rem; max-width:600px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                <h3 style="margin:0;">Live Tracking (Simulation)</h3>
+                <button onclick="closeTracking()"
+                    style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+            </div>
+            <p class="text-muted">Collector is on the way! Estimated Arrival: <strong id="track-eta"
+                    style="color:var(--primary-dark)"></strong></p>
+
+            <div class="truck-tracker-wrapper">
+                <div class="truck-tracker-line"></div>
+                <div class="truck-tracker-fill" id="sim-truck-fill"></div>
+                
+                <div class="truck-stages-container">
+                    <div class="truck-stage active" id="stage-assigned">
+                        <div class="truck-dot"></div>
+                        <span class="truck-stage-label">Assigned</span>
+                    </div>
+                    <div class="truck-stage" id="stage-progress">
+                        <div class="truck-dot"></div>
+                        <span class="truck-stage-label">In Progress</span>
+                    </div>
+                    <div class="truck-stage" id="stage-completed">
+                        <div class="truck-dot"></div>
+                        <span class="truck-stage-label">Completed</span>
+                    </div>
+                </div>
+                
+                <div class="moving-truck-icon" id="sim-marker">🚛</div>
+            </div>
+
+            <p class="text-center text-muted" style="margin-top:1rem; font-size:0.9rem;" id="track-distance-text">
+                Calculating distance...</p>
+        </div>
+    </div>
+
+    <!-- Global Settings Modal -->
+    <div id="global-settings-modal" class="auth-container"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:100;">
+        <div class="auth-card" style="padding: 2.5rem; max-width:500px;">
+            <h3>User Settings</h3>
+            <form onsubmit="handleSaveSettings(event)" style="margin-top: 1.5rem;">
+                <div class="form-group">
+                    <label>Change Email</label>
+                    <input type="email" id="set-email" class="form-control" placeholder="Update email">
+                </div>
+                <div class="form-group">
+                    <label>Change Password</label>
+                    <input type="password" id="set-pwd" class="form-control" placeholder="New password (leave blank to keep current)">
+                </div>
+                <div class="form-group">
+                    <label>Confirm Password</label>
+                    <input type="password" id="set-confirm-pwd" class="form-control" placeholder="Confirm new password">
+                </div>
+                
+                <div style="display:flex; gap: 1rem; margin-top: 1rem; margin-bottom: 1.5rem;">
+                    <div style="flex:1;">
+                        <label style="display:block; margin-bottom:0.5rem; font-weight:500; font-size:0.9rem;">Language</label>
+                        <select id="lang-select" class="form-control">
+                            <option value="en">English</option>
+                            <option value="te">Telugu</option>
+                            <option value="hi">Hindi</option>
+                        </select>
+                    </div>
+                    <div style="flex:1;">
+                        <label style="display:block; margin-bottom:0.5rem; font-weight:500; font-size:0.9rem;">Theme</label>
+                        <label style="display:flex; align-items:center; gap: 0.5rem; cursor:pointer;">
+                            <input type="checkbox" id="theme-toggle-switch" style="width:20px; height:20px;">
+                            Dark Mode
+                        </label>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Save Settings</button>
+                <button type="button" class="btn"
+                    style="background:#f3f4f6; color:var(--text-dark); margin-top:0.75rem;"
+                    onclick="closeSettings()">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script src="js/user.js"></script>
+</body>
+
+</html>

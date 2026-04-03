@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collector Dashboard - Clean City</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <div class="dashboard">
+        <div class="sidebar">
+            <div class="sidebar-brand">🌿 Collector Portal</div>
+            <div class="sidebar-menu">
+                <a class="menu-item active" onclick="showColSection('tasks')"><span data-i18n="col_tasks">📋 My Active Tasks</span><span id="noti-col-tasks" class="notification-dot"></span></a>
+                <a class="menu-item" onclick="showColSection('performance')" data-i18n="col_performance">📊 My Performance</a>
+                <a class="menu-item" onclick="showColSection('calendar')" data-i18n="col_calendar">📅 Attendance</a>
+                <a class="menu-item" onclick="showColSection('leave')" data-i18n="col_leave">📝 Apply Leave</a>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="topbar">
+                <h2>Collector Dashboard</h2>
+                <div style="display:flex; align-items:center; gap: 1rem;">
+                    <span id="topbar-username" style="font-weight:600; color:var(--text-dark)"></span>
+                    <span id="col-status-badge" class="badge"></span>
+                    <button class="btn" style="background:transparent; color:var(--text-dark); padding:0.5rem;" onclick="openSettings()">⚙️ Settings</button>
+                    <button id="logout-btn" class="btn btn-primary"
+                        style="padding: 0.5rem 1rem; width: auto; border-radius:8px;">Logout</button>
+                </div>
+            </div>
+
+            <div class="container">
+
+                <div id="tasks-section" class="card">
+                    <h3 style="margin-bottom: 1.5rem">Current & Assigned Tasks</h3>
+                    <div id="tasks-container" style="display:flex; flex-direction:column; gap: 1.5rem;">
+                        <!-- dynamic tasks -->
+                    </div>
+                </div>
+
+                <div id="performance-section" class="card" style="display:none;">
+                    <h3 style="margin-bottom: 1.5rem">My Performance</h3>
+                    <div style="display:flex; gap: 1.5rem; margin-bottom:1.5rem;">
+                        <div style="flex:1; text-align:center; padding: 1.5rem; border: 1px solid var(--border-light); border-radius: 12px;">
+                            <h2 id="col-total-jobs" style="color:var(--primary-dark); font-size:2rem;">0</h2>
+                            <p class="text-muted text-sm mt-2">Total Jobs Completed</p>
+                        </div>
+                        <div style="flex:1; text-align:center; padding: 1.5rem; border: 1px solid var(--border-light); border-radius: 12px;">
+                            <h2 id="col-avg-rating" style="color:#fbbf24; font-size:2rem;">-</h2>
+                            <p class="text-muted text-sm mt-2">Average Rating</p>
+                        </div>
+                    </div>
+                    <h4 style="margin-bottom: 1rem;">Completed Jobs & User Reviews</h4>
+                    <div id="perf-container" style="display:flex; flex-direction:column; gap: 1.5rem;">
+                        <!-- dynamic items -->
+                    </div>
+                </div>
+
+                <div id="calendar-section" class="card" style="display:none;">
+                    <h3 style="margin-bottom: 1.5rem" data-i18n="col_calendar">Attendance Calendar</h3>
+                    <div id="col-calendar-grid" style="display:grid; grid-template-columns:repeat(7, 1fr); gap:10px;">
+                        <!-- dynamic calendar -->
+                    </div>
+                </div>
+
+                <div id="leave-section" class="card" style="display:none; max-width:600px; margin:0 auto;">
+                    <h3 style="margin-bottom: 1.5rem" data-i18n="col_leave">Apply Leave</h3>
+                    <form onsubmit="submitLeaveRequest(event)">
+                        <div class="form-group">
+                            <label>Select Date</label>
+                            <input type="date" id="leave-date" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Reason for Leave</label>
+                            <textarea id="leave-reason" class="form-control" rows="3" required placeholder="Describe reason..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width:100%;">Submit Request</button>
+                    </form>
+
+                    <h4 style="margin-top: 2rem; margin-bottom:1rem;">My Leave History</h4>
+                    <div id="leave-history-container" style="display:flex; flex-direction:column; gap:1rem;">
+                        <!-- dynamic leave history -->
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Complete Modal (Camera) -->
+    <div id="complete-modal" class="auth-container"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:100;">
+        <div class="auth-card" style="padding: 2.5rem; max-width:600px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h3 style="margin:0;">Mark Task Completed</h3>
+                <button onclick="closeCompleteModal()"
+                    style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+            </div>
+            <p class="text-muted mt-2">Capture the 'after' photo to prove the area is clean.</p>
+
+            <form onsubmit="submitTaskComplete(event)" style="margin-top: 1.5rem;">
+                <input type="hidden" id="complete-comp-id">
+
+                <div class="form-group">
+                    <label>📸 Live Camera Capture <span style="color:red">*</span></label>
+                    <div class="camera-container">
+                        <video id="col-video-stream" autoplay playsinline></video>
+                        <img id="col-video-preview" class="preview-image">
+                    </div>
+                    <div style="display:flex; gap: 1rem;">
+                        <button type="button" class="btn" style="background:#e5e7eb; color:var(--text-dark);"
+                            onclick="initColCam()" id="col-start-cam-btn">Open Camera</button>
+                        <button type="button" class="btn btn-primary" id="col-capture-cam-btn"
+                            style="display:none; background:var(--status-completed)" onclick="takeColPhoto()">Capture
+                            Clean Area</button>
+                        <button type="button" class="btn" style="background:#fef2f2; color:#b91c1c; display:none;"
+                            id="col-retake-cam-btn" onclick="retakeColPhoto()">Retake</button>
+                    </div>
+                </div>
+
+                <input type="hidden" id="col-captured-image-base64">
+
+                <button type="submit" class="btn btn-primary" style="margin-top: 1rem; width:100%;">Mark Task as
+                    Completed</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Global Settings Modal -->
+    <div id="global-settings-modal" class="auth-container"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:100;">
+        <div class="auth-card" style="padding: 2.5rem; max-width:500px;">
+            <h3>User Settings</h3>
+            <form onsubmit="handleSaveSettings(event)" style="margin-top: 1.5rem;">
+                <div class="form-group">
+                    <label>Change Email</label>
+                    <input type="email" id="set-email" class="form-control" placeholder="Update email">
+                </div>
+                <div class="form-group">
+                    <label>Change Password</label>
+                    <input type="password" id="set-pwd" class="form-control" placeholder="New password (leave blank to keep current)">
+                </div>
+                <div class="form-group">
+                    <label>Confirm Password</label>
+                    <input type="password" id="set-confirm-pwd" class="form-control" placeholder="Confirm new password">
+                </div>
+                
+                <div style="display:flex; gap: 1rem; margin-top: 1rem; margin-bottom: 1.5rem;">
+                    <div style="flex:1;">
+                        <label style="display:block; margin-bottom:0.5rem; font-weight:500; font-size:0.9rem;">Language</label>
+                        <select id="lang-select" class="form-control">
+                            <option value="en">English</option>
+                            <option value="te">Telugu</option>
+                            <option value="hi">Hindi</option>
+                        </select>
+                    </div>
+                    <div style="flex:1;">
+                        <label style="display:block; margin-bottom:0.5rem; font-weight:500; font-size:0.9rem;">Theme</label>
+                        <label style="display:flex; align-items:center; gap: 0.5rem; cursor:pointer;">
+                            <input type="checkbox" id="theme-toggle-switch" style="width:20px; height:20px;">
+                            Dark Mode
+                        </label>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Save Settings</button>
+                <button type="button" class="btn"
+                    style="background:#f3f4f6; color:var(--text-dark); margin-top:0.75rem;"
+                    onclick="closeSettings()">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script src="js/collector.js"></script>
+</body>
+
+</html>
